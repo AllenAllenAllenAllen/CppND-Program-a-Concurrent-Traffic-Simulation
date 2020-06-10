@@ -1,5 +1,7 @@
 #include <iostream>
 #include <random>
+#include <chrono>
+#include <thread>
 #include "TrafficLight.h"
 
 /* Implementation of class "MessageQueue" */
@@ -23,7 +25,6 @@ void MessageQueue<T>::send(T &&msg)
 
 /* Implementation of class "TrafficLight" */
 
-/* 
 TrafficLight::TrafficLight()
 {
     _currentPhase = TrafficLightPhase::red;
@@ -44,6 +45,8 @@ TrafficLightPhase TrafficLight::getCurrentPhase()
 void TrafficLight::simulate()
 {
     // FP.2b : Finally, the private method „cycleThroughPhases“ should be started in a thread when the public method „simulate“ is called. To do this, use the thread queue in the base class. 
+
+    threads.emplace_back(std::thread(&TrafficLight::cycleThroughPhases, this));
 }
 
 // virtual function which is executed in a thread
@@ -53,6 +56,24 @@ void TrafficLight::cycleThroughPhases()
     // and toggles the current phase of the traffic light between red and green and sends an update method 
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
-}
 
-*/
+    int randInterval[2] = {4, 6};
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 2);
+    int currInterval = randInterval[int(dis(gen))];
+    auto lastUpdate = std::chrono::system_clock::now();
+    while (true) {
+        auto curr = std::chrono::system_clock::now();
+        if ((curr - lastUpdate).count() >= currInterval) {
+            if (_currentPhase == TrafficLightPhase::red) {
+                _currentPhase = TrafficLightPhase::green;
+            } else {
+                _currentPhase = TrafficLightPhase::red;
+            }
+            currInterval = randInterval[int(dis(gen))];
+            lastUpdate = std::chrono::system_clock::now();
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+}
