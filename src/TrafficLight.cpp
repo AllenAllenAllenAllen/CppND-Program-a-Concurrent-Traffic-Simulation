@@ -14,9 +14,9 @@ T MessageQueue<T>::receive()
     // The received object should then be returned by the receive function. 
 
     std::unique_lock<std::mutex> uLock(_mutex);
-    _cond.wait(uLock, [this] { return !_msgQueue.empty(); });
-    T msg = std::move(_msgQueue.back());
-    _msgQueue.pop_back();
+    _cond.wait(uLock, [this] { return !_queue.empty(); });
+    T msg = std::move(_queue.back());
+    _queue.pop_back();
     return msg;
 }
 
@@ -27,7 +27,7 @@ void MessageQueue<T>::send(T &&msg)
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
     
     std::lock_guard<std::mutex> lck(_mutex);
-    _msgQueue.push_back(std::move(msg));
+    _queue.push_back(std::move(msg));
     _cond.notify_one();
 }
 
@@ -77,20 +77,16 @@ void TrafficLight::cycleThroughPhases()
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0, 2);
     int currInterval = randInterval[int(dis(gen))];
-    auto lastUpdate = std::chrono::system_clock::now();
     while (true) {
-        auto curr = std::chrono::system_clock::now();
-        if ((curr - lastUpdate).count() >= currInterval) {
-            TrafficLightPhase currPhase = _currentPhase;
-            _msgQueue.send(std::move(currPhase));
-            if (_currentPhase == TrafficLightPhase::red) {
-                _currentPhase = TrafficLightPhase::green;
-            } else {
-                _currentPhase = TrafficLightPhase::red;
-            }
-            currInterval = randInterval[int(dis(gen))];
-            lastUpdate = std::chrono::system_clock::now();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 * currInterval));
+        TrafficLightPhase currPhase = _currentPhase;
+        if (_currentPhase == TrafficLightPhase::red) {
+            _currentPhase = TrafficLightPhase::green;
+        } else {
+            _currentPhase = TrafficLightPhase::red;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        _msgQueue.send(std::move(currPhase));
+        currInterval = randInterval[int(dis(gen))];
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
