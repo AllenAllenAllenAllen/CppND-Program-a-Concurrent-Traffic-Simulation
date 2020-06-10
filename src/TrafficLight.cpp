@@ -14,9 +14,9 @@ T MessageQueue<T>::receive()
     // The received object should then be returned by the receive function. 
 
     std::unique_lock<std::mutex> uLock(_mutex);
-    _cond.wait(uLock, [this] { return !_deque.empty(); });
-    T msg = std::move(_deque.back());
-    _deque.pop_back();
+    _cond.wait(uLock, [this] { return !_msgQueue.empty(); });
+    T msg = std::move(_msgQueue.back());
+    _msgQueue.pop_back();
     return msg;
 }
 
@@ -26,8 +26,8 @@ void MessageQueue<T>::send(T &&msg)
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
     
-    std::lock_gurad<std::mutex> lck(_mutex);
-    _queue.push_back(std::move(msg));
+    std::lock_guard<std::mutex> lck(_mutex);
+    _msgQueue.push_back(std::move(msg));
     _cond.notify_one();
 }
 
