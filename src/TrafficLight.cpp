@@ -79,7 +79,6 @@ void TrafficLight::cycleThroughPhases()
     int currInterval = randInterval[int(dis(gen))];
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 * currInterval));
-        TrafficLightPhase currPhase = _currentPhase;
         if (_currentPhase == TrafficLightPhase::red) {
             _currentPhase = TrafficLightPhase::green;
         } else {
