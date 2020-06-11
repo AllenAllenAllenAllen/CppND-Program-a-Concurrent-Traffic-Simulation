@@ -45,7 +45,7 @@ void TrafficLight::waitForGreen()
     // Once it receives TrafficLightPhase::green, the method returns.
 
     while (true) {
-        TrafficLightPhase phase = _queue.receive();
+        TrafficLightPhase phase = _msgQueue.receive();
         if (phase == TrafficLightPhase::green) {
             return;
         }
@@ -85,6 +85,7 @@ void TrafficLight::cycleThroughPhases()
         } else {
             _currentPhase = TrafficLightPhase::red;
         }
+        TrafficLightPhase currPhase = _currentPhase;
         _msgQueue.send(std::move(currPhase));
         currInterval = randInterval[int(dis(gen))];
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
